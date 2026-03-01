@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // ── CONFIG ────────────────────────────────────────────────────────────────
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 const CATEGORIES = ["All","Corporate","Macro","Regulatory","Earnings","IPO","FII/DII","Commodities"];
 const SENTIMENTS = ["All","Bullish","Bearish","Neutral"];

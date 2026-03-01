@@ -8,9 +8,5 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
   },
-  define: {
-    'process.env': {
-      REACT_APP_API_URL: process.env.VITE_API_URL || '',
-    },
-  },
+
 })
