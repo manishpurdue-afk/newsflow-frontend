@@ -15,13 +15,27 @@ const SOURCES = [
   { url: "https://economictimes.indiatimes.com/markets/ipo/rssfeeds/5575287.cms",           source: "ET Markets",    category: "IPO",         segment: "Mid Cap"   },
 ];
 
-const BULLISH_WORDS = ["rises","surges","jumps","gains","rally","beats","record","strong","up","growth","profit","positive","boom","expands","approves","launches","wins","raises"];
-const BEARISH_WORDS = ["falls","drops","slides","declines","plunges","miss","weak","loss","down","cut","penalty","rejects","cancels","delay","slump","concern","warning","hurt","crisis"];
+const BULLISH_WORDS = new Set([
+  "rise","rises","rose","rising","surge","surges","surged","jump","jumps","jumped",
+  "gain","gains","gained","rally","rallies","rallied","beat","beats","record","high",
+  "growth","profit","profits","positive","boom","expand","expands","approve","approves","approved",
+  "launch","launches","win","wins","raise","raises","raised","recovery","rebound","uptick","boost",
+]);
+const BEARISH_WORDS = new Set([
+  "fall","falls","fell","falling","drop","drops","dropped","slide","slides","slid",
+  "decline","declines","declined","plunge","plunges","plunged","tumble","tumbles","tumbled",
+  "miss","weak","weakness","loss","losses","cut","cuts","penalty","reject","rejects","rejected",
+  "cancel","cancels","delay","slump","slumps","concern","warning","warn","hurt","crisis","crash",
+  "selloff","sell-off","fear","fears","conflict","sanction","sanctions","default",
+]);
 
-function inferSentiment(text) {
-  const t = text.toLowerCase();
-  const b = BULLISH_WORDS.filter(w => t.includes(w)).length;
-  const r = BEARISH_WORDS.filter(w => t.includes(w)).length;
+function inferSentiment(headline) {
+  const words = headline.toLowerCase().replace(/[^a-z-\s]/g, " ").split(/\s+/);
+  let b = 0, r = 0;
+  for (const w of words) {
+    if (BULLISH_WORDS.has(w)) b++;
+    if (BEARISH_WORDS.has(w)) r++;
+  }
   if (b > r) return "Bullish";
   if (r > b) return "Bearish";
   return "Neutral";
@@ -71,7 +85,7 @@ async function fetchFeed(src) {
     const feed = await parser.parseURL(src.url);
     return feed.items.slice(0, 8).map(item => {
       const headline  = item.title?.trim() || "";
-      const sentiment = inferSentiment(headline + " " + (item.contentSnippet || ""));
+      const sentiment = inferSentiment(headline);
       const tickers   = extractTickers(headline);
       return {
         id:       _id++,
