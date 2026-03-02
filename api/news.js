@@ -61,7 +61,7 @@ function inferPriority(source, category) {
 
 function formatTime(date) {
   const d = date ? new Date(date) : new Date();
-  return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  return d.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 let _id = 1;

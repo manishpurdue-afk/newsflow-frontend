@@ -28,6 +28,14 @@ async function fetchNews() {
   return data.stories || [];
 }
 
+async function fetchPrices() {
+  try {
+    const res  = await fetch(`${API_BASE}/api/prices`);
+    if (!res.ok) return {};
+    return await res.json();
+  } catch { return {}; }
+}
+
 async function fetchAnalysis(item) {
   const res = await fetch(`${API_BASE}/api/analysis`, {
     method:  "POST",
@@ -71,7 +79,7 @@ function NewsCard({ item, flashId }) {
       style={{ padding:"12px 20px", borderBottom:"1px solid #0b1525" }}
     >
       <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-        <div style={{ minWidth:40, fontSize:10, color:"#2d4a6e", paddingTop:2, fontVariantNumeric:"tabular-nums" }}>{item.time}</div>
+        <div style={{ minWidth:40, fontSize:10, color:"#5a8ab0", paddingTop:2, fontVariantNumeric:"tabular-nums" }}>{item.time}</div>
         <div style={{ paddingTop:7, minWidth:6 }}>
           <div style={{ width:5, height:5, borderRadius:"50%", background:catColor }} />
         </div>
@@ -81,7 +89,7 @@ function NewsCard({ item, flashId }) {
             <span style={{ fontSize:9, padding:"1px 6px", borderRadius:2, background:`${catColor}16`, color:catColor, border:`1px solid ${catColor}35`, letterSpacing:.4 }}>{item.category.toUpperCase()}</span>
             <span style={{ fontSize:9, padding:"1px 6px", borderRadius:2, background:sent.bg, color:sent.color, border:`1px solid ${sent.color}40` }}>{sent.icon} {item.sentiment.toUpperCase()}</span>
             {isPrio && <span style={{ fontSize:9, padding:"1px 5px", borderRadius:2, background:"rgba(217,119,6,0.1)", color:"#d97706", border:"1px solid rgba(217,119,6,0.28)" }}>★ PRIORITY</span>}
-            <span style={{ marginLeft:"auto", fontSize:9, color:"#2d4a6e" }}>{item.source}</span>
+            <span style={{ marginLeft:"auto", fontSize:9, color:"#5a8ab0" }}>{item.source}</span>
           </div>
           {/* headline */}
           <div style={{ fontSize:13, color: open ? "#e2e8f0" : "#8fadc8", lineHeight:1.55, fontFamily:"'IBM Plex Sans',sans-serif", fontWeight:500 }}>
@@ -95,7 +103,7 @@ function NewsCard({ item, flashId }) {
           {open && (
             <div style={{ marginTop:10, padding:"12px 14px", background:"rgba(8,18,36,0.85)", borderRadius:4, borderLeft:"3px solid #1d4ed8", fontFamily:"'IBM Plex Sans',sans-serif", fontSize:12, lineHeight:1.8, color:"#94a3b8" }}>
               {analysis?.loading && (
-                <div style={{ display:"flex", alignItems:"center", gap:8, color:"#2d4a6e" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, color:"#5a8ab0" }}>
                   <span style={{ display:"inline-block", animation:"sp 0.7s linear infinite" }}>⟳</span>
                   <span>Generating market analysis via Claude…</span>
                 </div>
@@ -139,6 +147,7 @@ export default function Newsflow() {
   const [filters,     setFilters]    = useState({ category:"All", sentiment:"All", segment:"All", source:"All", search:"" });
   const [flashId,     setFlashId]    = useState(null);
   const [showFilter,  setShowFilter] = useState(true);
+  const [prices,      setPrices]     = useState({});
   const prevIdsRef = useRef(new Set());
 
   // ── Load news from backend ──────────────────────────────────────────────
@@ -169,6 +178,13 @@ export default function Newsflow() {
 
   // Initial load
   useEffect(() => { loadNews(); }, [loadNews]);
+
+  // Prices — load on mount, refresh every minute
+  useEffect(() => {
+    fetchPrices().then(setPrices);
+    const t = setInterval(() => fetchPrices().then(setPrices), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   // Auto-refresh every 5 minutes (aligned with backend cache TTL)
   useEffect(() => {
@@ -207,14 +223,14 @@ export default function Newsflow() {
         .ncard.prio{border-left-color:#92400e}
         .ncard.flash{animation:flashIn 2.2s ease-out}
         @keyframes flashIn{0%{background:rgba(0,208,156,0.15)}100%{background:transparent}}
-        .fpill{cursor:pointer;border:1px solid #111f35;background:transparent;color:#34475d;padding:3px 10px;border-radius:3px;font-size:10px;font-family:inherit;transition:all 0.12s;white-space:nowrap}
+        .fpill{cursor:pointer;border:1px solid #1e3a5f;background:transparent;color:#5a8ab0;padding:3px 10px;border-radius:3px;font-size:10px;font-family:inherit;transition:all 0.12s;white-space:nowrap}
         .fpill:hover,.fpill.on{border-color:#2563eb;background:rgba(37,99,235,0.1);color:#7eb3f5}
         .srch{background:rgba(255,255,255,0.03);border:1px solid #111f35;color:#c7d8ef;padding:6px 12px;border-radius:3px;font-family:inherit;font-size:11px;width:200px;outline:none}
-        .srch:focus{border-color:#2563eb}.srch::placeholder{color:#1e3a5f}
+        .srch:focus{border-color:#2563eb}.srch::placeholder{color:#4a7a9b}
         .ldot{width:6px;height:6px;border-radius:50%;background:#00d09c;display:inline-block;animation:pu 1.6s infinite}
         @keyframes pu{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.6)}}
         @keyframes sp{to{transform:rotate(360deg)}}
-        .refreshbtn{cursor:pointer;background:transparent;border:1px solid #111f35;color:#2d4a6e;padding:3px 10px;border-radius:3px;font-size:9px;font-family:inherit;letter-spacing:.5px;transition:all 0.12s}
+        .refreshbtn{cursor:pointer;background:transparent;border:1px solid #1e3a5f;color:#5a8ab0;padding:3px 10px;border-radius:3px;font-size:9px;font-family:inherit;letter-spacing:.5px;transition:all 0.12s}
         .refreshbtn:hover{border-color:#2563eb;color:#60a5fa}
       `}</style>
 
@@ -223,20 +239,31 @@ export default function Newsflow() {
         <div style={{ display:"flex", alignItems:"center", gap:9 }}>
           <div style={{ width:26, height:26, background:"linear-gradient(135deg,#1d4ed8,#06b6d4)", borderRadius:4, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:"#fff" }}>N</div>
           <span style={{ fontSize:12, fontWeight:600, letterSpacing:3, color:"#adc5e0" }}>NEWSFLOW</span>
-          <span style={{ fontSize:9, color:"#162840", letterSpacing:2 }}>INDIA</span>
+          <span style={{ fontSize:9, color:"#4a7a9b", letterSpacing:2 }}>INDIA</span>
         </div>
-        <div style={{ flex:1, display:"flex", gap:20, fontSize:10, color:"#243d56" }}>
-          {[["NIFTY","–","–","–"],["SENSEX","–","–","–"],["BANKNIFTY","–","–","–"],["USD/INR","–","–","–"]].map(([n,v,d,c])=>(
-            <span key={n}><span style={{color:"#1e3a5f"}}>{n} </span><span style={{color:"#3d6080"}}>{v}</span></span>
-          ))}
+        <div style={{ flex:1, display:"flex", gap:20, fontSize:10 }}>
+          {["NIFTY","SENSEX","BANKNIFTY","USD/INR"].map(n => {
+            const p   = prices[n];
+            const pct = p ? parseFloat(p.pct) : null;
+            const col = pct == null ? "#4a6a8a" : pct >= 0 ? "#00d09c" : "#ff4d6d";
+            return (
+              <span key={n} style={{display:"flex",gap:5,alignItems:"center"}}>
+                <span style={{color:"#4a6a8a"}}>{n}</span>
+                <span style={{color:col,fontVariantNumeric:"tabular-nums"}}>
+                  {p ? p.price : "–"}
+                  {p && <span style={{fontSize:9,marginLeft:2}}>{pct>=0?"▲":"▼"}{Math.abs(pct).toFixed(2)}%</span>}
+                </span>
+              </span>
+            );
+          })}
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:10 }}>
           {loading
-            ? <span style={{color:"#2d4a6e",fontSize:10}}>⟳ FETCHING…</span>
+            ? <span style={{color:"#5a8ab0",fontSize:10}}>⟳ FETCHING…</span>
             : <><span className="ldot"/><span style={{color:"#00d09c",fontSize:10}}>LIVE</span></>
           }
           <span style={{color:"#0d1d30",fontSize:12}}>│</span>
-          <span style={{color:"#1e3a5f"}}>{new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}</span>
+          <span style={{color:"#4a7a9b"}}>{new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}</span>
         </div>
       </div>
 
@@ -251,7 +278,7 @@ export default function Newsflow() {
         ].map(s=>(
           <div key={s.l} style={{background:"rgba(255,255,255,0.02)",border:"1px solid #0d1d30",padding:"4px 14px",borderRadius:3,textAlign:"center",minWidth:60}}>
             <div style={{fontSize:15,fontWeight:600,color:s.c,lineHeight:1.2}}>{s.v}</div>
-            <div style={{fontSize:8,color:"#1e3a5f",letterSpacing:.8}}>{s.l}</div>
+            <div style={{fontSize:8,color:"#4a7a9b",letterSpacing:.8}}>{s.l}</div>
           </div>
         ))}
         <div style={{flex:1}}/>
@@ -270,7 +297,7 @@ export default function Newsflow() {
             {label:"SOURCE",key:"source",opts:SOURCES.slice(1)},
           ].map(row=>(
             <div key={row.key} style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontSize:8,color:"#1e3a5f",letterSpacing:.8,width:62,flexShrink:0}}>{row.label}</span>
+              <span style={{fontSize:8,color:"#4a7a9b",letterSpacing:.8,width:62,flexShrink:0}}>{row.label}</span>
               <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                 <button className={`fpill${filters[row.key]==="All"?" on":""}`} onClick={()=>setFilters(f=>({...f,[row.key]:"All"}))}>ALL</button>
                 {row.opts.map(opt=>(
@@ -287,7 +314,7 @@ export default function Newsflow() {
       {/* Feed */}
       <div style={{flex:1,overflowY:"auto"}}>
         {loading && (
-          <div style={{textAlign:"center",color:"#2d4a6e",fontSize:12,padding:60}}>
+          <div style={{textAlign:"center",color:"#5a8ab0",fontSize:12,padding:60}}>
             <div style={{display:"inline-block",animation:"sp 0.7s linear infinite",fontSize:20,marginBottom:12}}>⟳</div>
             <div>Fetching live news from sources…</div>
           </div>
@@ -295,26 +322,26 @@ export default function Newsflow() {
         {!loading && error && (
           <div style={{textAlign:"center",padding:60}}>
             <div style={{color:"#ff4d6d",fontSize:12,marginBottom:8}}>⚠ Could not connect to backend</div>
-            <div style={{color:"#2d4a6e",fontSize:10,marginBottom:16}}>{error}</div>
-            <div style={{color:"#1e3a5f",fontSize:10}}>Make sure the backend is running:<br/><code style={{color:"#4d8bc0"}}>cd newsflow-backend && npm start</code></div>
+            <div style={{color:"#5a8ab0",fontSize:10,marginBottom:16}}>{error}</div>
+            <div style={{color:"#4a7a9b",fontSize:10}}>Make sure the backend is running:<br/><code style={{color:"#4d8bc0"}}>cd newsflow-backend && npm start</code></div>
           </div>
         )}
         {!loading && !error && filtered.length === 0 && (
-          <div style={{textAlign:"center",color:"#1e3a5f",fontSize:12,padding:60}}>No stories match current filters.</div>
+          <div style={{textAlign:"center",color:"#4a7a9b",fontSize:12,padding:60}}>No stories match current filters.</div>
         )}
         {!loading && !error && filtered.map(item => <NewsCard key={item.id} item={item} flashId={flashId}/>)}
       </div>
 
       {/* Status bar */}
-      <div style={{background:"#050910",borderTop:"1px solid #0d1d30",padding:"5px 20px",display:"flex",alignItems:"center",gap:12,fontSize:9,color:"#162840",flexShrink:0,letterSpacing:.5}}>
+      <div style={{background:"#050910",borderTop:"1px solid #0d1d30",padding:"5px 20px",display:"flex",alignItems:"center",gap:12,fontSize:9,color:"#4a7a9b",flexShrink:0,letterSpacing:.5}}>
         <span className="ldot"/>
-        <span style={{color:"#1e3a5f"}}>AUTO-REFRESH 5MIN</span>
+        <span style={{color:"#4a7a9b"}}>AUTO-REFRESH 5MIN</span>
         <span>│</span>
         <span>{filtered.length}/{news.length} STORIES</span>
         <span>│</span>
-        <span style={{color:"#1e3a5f"}}>{refreshLabel}</span>
+        <span style={{color:"#4a7a9b"}}>{refreshLabel}</span>
         <span>│</span>
-        <span style={{color:"#1e3a5f"}}>AI ANALYSIS BY CLAUDE</span>
+        <span style={{color:"#4a7a9b"}}>AI ANALYSIS BY CLAUDE</span>
         <div style={{flex:1}}/>
         <span>NOT FINANCIAL ADVICE</span>
       </div>

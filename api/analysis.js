@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return res.status(500).json({ error: "GROQ_API_KEY not set in environment" });
 
-  const prompt = `You are a sharp Indian equity market analyst writing for a professional trading terminal. Given this headline, write exactly 3 sentences covering: (1) what happened and why it matters, (2) immediate market/stock price impact expected, (3) key levels or events to watch. Be specific to Indian markets. No bullet points, no headers — flowing sentences only.
+  const prompt = `You are a sharp Indian equity market analyst writing for a professional trading terminal. Analyze ONLY the given headline — do not cite any specific Nifty/Sensex/stock price levels or historical numbers. Write exactly 3 sentences: (1) what this news means and why it matters, (2) which sectors or stocks face the most immediate impact and in which direction, (3) what key event or data point traders should watch next. Be specific to Indian markets. No bullet points, no headers — flowing sentences only.
 
 Headline: "${headline}"
 Category: ${category} | Sentiment: ${sentiment} | Tickers: ${tickers?.join(", ")}`;
